@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, user-scalable=no, initial-scale=1.0, maximum-scale=1.0, minimum-scale=1.0">
+    {% load static %}
+    <link rel="stylesheet" href="{% static 'check/style.css' %}">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Загруженные файлы</title>
+</head>
+<body>
+    <div class="container">
+        <header>
+            {% include 'check/navbar.html' %}
+            <h1>Семестры</h1>
+        </header>
+        <ul class="list-group">
+        {% for folder in folders %}
+            <li class="list-group-item"><a href="{% url 'check:list_files' folder=folder %}">{{ folder }}</a></li>
+        {% endfor %}
+        </ul>
+    </div>
+</body>
+</html>

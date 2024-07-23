@@ -1,0 +1,2 @@
+[console_scripts]
+djangocms = cms.management.djangocms:execute_from_command_line

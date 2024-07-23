@@ -1,0 +1,120 @@
+{% extends 'main/base.html' %}
+
+{% block title %}
+Расписание занятий
+{% endblock %}
+
+{% block content %}
+
+<h5>Расписание экзаменов</h5>
+    <form action="{% url 'exam_rasp' %}" method="post">
+        {% csrf_token %}
+        <div class="search-rasp">
+            <div class="input-group" style="width: 550px">
+                <input type="search" class="form-control rounded" placeholder="Введите группу или преподавателя" aria-label="Search" aria-describedby="search-addon" name="search_query" />
+                <button type="submit" class="btn btn-outline-primary" data-mdb-ripple-init>Поиск</button>
+            </div>
+            <div class="form-check-inline">
+                <input class="form-check-input" type="radio" name="search_type" id="flexRadioDefault1" value="group">
+                <label class="form-check-label" for="flexRadioDefault1">
+                    Группа
+                </label>
+            </div>
+            <div class="form-check-inline">
+                <input class="form-check-input" type="radio" name="search_type" id="flexRadioDefault2" value="teacher">
+                <label class="form-check-label" for="flexRadioDefault2">
+                    Преподаватель
+                </label>
+            </div>
+        </div>
+    </form>
+
+<div>
+    <!-- Display qualifications -->
+    {% for qualification in qualifications %}
+        <a class="btn btn-primary" href="{% url 'exam_rasp' %}?qualification={{ qualification.qualification }}">{{ qualification.qualification }}</a>
+    {% endfor %}
+    <a class="btn btn-primary" href="{% url 'exam_rasp' %}?teacher=true">Преподавателям</a>
+    <br>
+
+    <!-- Display faculties if selected qualification -->
+    {% if faculties %}
+        {% for faculty in faculties %}
+            <a class="btn btn-primary" href="{% url 'exam_rasp' %}?faculty={{ faculty.id }}&qualification={{ request.GET.qualification }}">{{ faculty.faculty }}</a>
+        {% endfor %}
+        <br>
+    {% endif %}
+
+    <!-- Display courses if selected faculty -->
+    {% if courses %}
+        {% for course in courses %}
+            <a class="btn btn-primary" href="{% url 'exam_rasp' %}?course={{ course }}&faculty={{ selected_faculty.id }}&qualification={{ request.GET.qualification }}">{{ course }}</a>
+        {% endfor %}
+        <br><br>
+    {% endif %}
+
+    <!-- Display groups if selected course -->
+    {% if groups and not exam_info_teacher %}
+        {% for group in groups %}
+            <a class="btn btn-primary" href="{% url 'exam_rasp' %}?group={{ group.id }}&course={{ selected_course }}&faculty={{ selected_faculty.id }}&qualification={{ request.GET.qualification }}">{{ group.group }}</a>
+        {% endfor %}
+        <br>
+    {% endif %}
+
+    <!-- Display departments if teachers selected -->
+    {% if departments %}
+        {% for department in departments %}
+            <a class="btn btn-primary" href="{% url 'exam_rasp' %}?department={{ department.id }}">{{ department.department }}</a>
+        {% endfor %}
+        <br><br>
+    {% endif %}
+
+    {% if teachers %}
+        {% for teacher in teachers %}
+            <a class="btn btn-primary" href="{% url 'exam_rasp' %}?department_id={{ department_id }}&teacher_id={{ teacher.id }}">{{ teacher.short_name }}</a>
+        {% endfor %}
+        <br>
+    {% endif %}
+
+    {% if exam_info %}
+    <h5>Расписание экзаменов для группы {% if group %}{{ group }}{% endif %}</h5>
+    <br><table class="table">
+        <tr class="rasp-head">
+            <th class="exam-info">Дата экзамена</th>
+            <th class="exam-info">Время</th>
+            <th class="exam-info">Дисциплина</th>
+            <th class="exam-info">Преподаватель</th>
+        </tr>
+        {% for exam in exam_info %}
+        <tr>
+            <td>{{ exam.exam_date }}</td>
+            <td>{{ exam.start_time }}</td>
+            <td>{{ exam.discipline }}</td>
+            <td>{{ exam.teacher }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    {% endif %}
+
+    {% if exam_info_teacher %}
+    <h5>Расписание экзаменов для преподавателя {% if teacher %}{{ teacher }}{% endif %}</h5>
+    <table class="table">
+    <tr class="rasp-head">
+        <th class="exam-info">Дата экзамена</th>
+        <th class="exam-info">Время</th>
+        <th class="exam-info">Дисциплина</th>
+        <th class="exam-info">Группы</th>
+    </tr>
+    {% for exam in exam_info_teacher %}
+    <tr>
+        <td>{{ exam.exam_date }}</td>
+        <td>{{ exam.start_time }}</td>
+        <td>{{ exam.discipline }}</td>
+        <td>{{ exam.groups }}</td>
+    </tr>
+    {% endfor %}
+    </table>
+    {% endif %}
+
+</div>
+{% endblock %}

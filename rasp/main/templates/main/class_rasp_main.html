@@ -1,0 +1,306 @@
+{% extends 'main/base.html' %}
+{% block title %}
+Расписание занятий
+{% endblock %}
+
+{% block content %}
+<h5>Расписание занятий</h5>
+    <form action="{% url 'class_rasp' %}" method="post">
+        {% csrf_token %}
+        <div class="search-rasp">
+            <div class="input-group" style="width: 550px">
+                <input type="search" class="form-control rounded" placeholder="Введите группу или преподавателя" aria-label="Search" aria-describedby="search-addon" name="search_query" />
+                <button type="submit" class="btn btn-outline-primary" data-mdb-ripple-init>Поиск</button>
+            </div>
+            <div class="form-check-inline">
+                <input class="form-check-input" type="radio" name="search_type" id="flexRadioDefault1" value="group">
+                <label class="form-check-label" for="flexRadioDefault1">
+                    Группа
+                </label>
+            </div>
+            <div class="form-check-inline">
+                <input class="form-check-input" type="radio" name="search_type" id="flexRadioDefault2" value="teacher">
+                <label class="form-check-label" for="flexRadioDefault2">
+                    Преподаватель
+                </label>
+            </div>
+        </div>
+    </form>
+
+    <!-- Display qualifications -->
+    {% for qualification in qualifications %}
+        <a class="btn btn-primary" href="{% url 'class_rasp' %}?qualification={{ qualification.qualification }}">{{ qualification.qualification }}</a>
+    {% endfor %}
+    <a class="btn btn-primary" href="{% url 'class_rasp' %}?teacher=true">Преподавателям</a>
+    <br>
+
+    <!-- Display faculties if selected qualification -->
+    {% if faculties %}
+        {% for faculty in faculties %}
+            <a class="btn btn-primary" href="{% url 'class_rasp' %}?faculty={{ faculty.id }}&qualification={{ request.GET.qualification }}">{{ faculty.faculty }}</a>
+        {% endfor %}
+        <br>
+    {% endif %}
+
+    <!-- Display courses if selected faculty -->
+    {% if courses %}
+        {% for course in courses %}
+            <a class="btn btn-primary" href="{% url 'class_rasp' %}?course={{ course }}&faculty={{ selected_faculty.id }}&qualification={{ request.GET.qualification }}">{{ course }}</a>
+        {% endfor %}
+        <br><br>
+    {% endif %}
+
+    <!-- Display groups if selected course -->
+    {% if groups %}
+        {% for group in groups %}
+            <a class="btn btn-primary" href="{% url 'class_rasp' %}?group={{ group.id }}&course={{ selected_course }}&faculty={{ selected_faculty.id }}&qualification={{ request.GET.qualification }}">{{ group.group }}</a>
+        {% endfor %}
+        <br>
+    {% endif %}
+
+    <!-- Display departments if teachers selected -->
+    {% if departments %}
+        {% for department in departments %}
+            <a class="btn btn-primary" href="{% url 'class_rasp' %}?department={{ department.id }}">{{ department.department }}</a>
+        {% endfor %}
+        <br><br>
+    {% endif %}
+
+    {% if teachers %}
+        {% for teacher in teachers %}
+            <a class="btn btn-primary" href="{% url 'class_rasp' %}?department_id={{ department_id }}&teacher_id={{ teacher.id }}">{{ teacher.short_name }}</a>
+        {% endfor %}
+        <br>
+    {% endif %}
+
+     <style>
+        .schedule-table {
+            display: none;
+        }
+        .schedule-table.active {
+            display: table;
+        }
+    </style>
+    <!-- Display group schedule if selected group -->
+    {% if group_schedules %}
+        <h5>Расписание занятий для группы {% if group %}{{ group }}{% endif %}</h5>
+    <!--<h2>Расписание для группы {{ group }}</h2>-->
+        <button onclick="changeWeek(-1)" class="btn" style="border-color: #008080">Предыдущая неделя</button>
+        <button onclick="changeWeek(1)" class="btn"  style="border-color: #008080">Следующая неделя</button>
+
+        <div id="odd-schedule" class="schedule-table">
+            <br><h6>Нечетная неделя</h6><br>
+            <table class="table" style="table-layout: fixed;">
+                <thead class="rasp-head>
+                    <tr">
+                      <th class="time">День / Пара</th>
+                      <th class="time">1  08:50-10:20</th>
+                      <th class="time">2  10:35-12:05</th>
+                      <th class="time">3  12:35-14:05</th>
+                      <th class="time">4  14:15-15:45</th>
+                      <th class="time">5  15:55-17:20</th>
+                      <th class="time">6  17:30-19:00</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for day, lessons in group_schedules.odd.items %}
+                    <tr>
+                        <td>{{ day }}</td>
+                        {% for lesson_list in lessons %}
+                        <td>
+                            {% if lesson_list %}
+                            {% for lesson in lesson_list %}
+                                {{ lesson.discipline.discipline }}<br>
+                                {{ lesson.classroom.classroom }} ({{ lesson.lesson_type.lesson_type }})<br>
+                                {{ lesson.teacher.short_name }}<br>
+                                {% for subgroup in lesson.subgroup.all %}
+                                {% if subgroup.subgroup_number in valid_subgroup_numbers %}
+                                    (1/2)<br><br>
+                                {% endif %}
+                                {% endfor %}
+                            {% endfor %}
+                            {% else %}
+                            Нет занятий
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+
+        <div id="even-schedule" class="schedule-table">
+            <br><h6>Четная неделя</h6><br>
+            <table class="table">
+                <thead class="rasp-head">
+                    <tr>
+                        <th class="time">День / Пара</th>
+                        <th class="time">1  08:50-10:20</th>
+                        <th class="time">2  10:35-12:05</th>
+                        <th class="time">3  12:35-14:05</th>
+                        <th class="time">4  14:15-15:45</th>
+                        <th class="time">5  15:55-17:20</th>
+                        <th class="time">6  17:30-19:00</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for day, lessons in group_schedules.even.items %}
+                    <tr>
+                        <td>{{ day }}</td>
+                        {% for lesson_list in lessons %}
+                        <td>
+                            {% if lesson_list %}
+                            {% for lesson in lesson_list %}
+                                {{ lesson.discipline.discipline }}<br>
+                                {{ lesson.classroom.classroom }} ({{ lesson.lesson_type.lesson_type }})<br>
+                                {{ lesson.teacher.short_name }}<br>
+                                {% for subgroup in lesson.subgroup.all %}
+                                {% if subgroup.subgroup_number in valid_subgroup_numbers %}
+                                    (1/2)<br>
+                                {% endif %}
+                                {% endfor %}
+                            {% endfor %}
+                            {% else %}
+                            Нет занятий
+                            {% endif %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    {% endif %}
+
+    {% if teacher_schedules %}
+    <h5>Расписание занятий для преподавателя {% if teacher %}{{ teacher }}{% endif %}</h5>
+    <button onclick="changeWeek(-1)" class="btn" style="border-color: #008080">Предыдущая неделя</button>
+    <button onclick="changeWeek(1)" class="btn" style="border-color: #008080">Следующая неделя</button>
+
+    <div id="odd-schedule" class="schedule-table">
+        <br><h6>Нечетная неделя</h6><br>
+        <table class="table">
+            <thead class="rasp-head">
+                <tr>
+                      <th class="time">День / Пара</th>
+                      <th class="time">1  08:50-10:20</th>
+                      <th class="time">2  10:35-12:05</th>
+                      <th class="time">3  12:35-14:05</th>
+                      <th class="time">4  14:15-15:45</th>
+                      <th class="time">5  15:55-17:20</th>
+                      <th class="time">6  17:30-19:00</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for day, lessons in teacher_schedules.odd.items %}
+                <tr>
+                    <td>{{ day }}</td>
+                    {% for lesson_list in lessons %}
+                    <td>
+                        {% if lesson_list %}
+                        {% for lesson in lesson_list %}
+                        {{ lesson.discipline.discipline }}<br>
+                        {{ lesson.classroom.classroom }} ({{ lesson.lesson_type.lesson_type }})<br>
+                        {{ lesson.teacher.short_name }}<br>
+                        {% for subgroup in lesson.subgroup.all %}
+                        {{ subgroup.group.group }}<br>
+                        {% endfor %}
+                        {% endfor %}
+                        {% else %}
+                        Нет занятий
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    <div id="even-schedule" class="schedule-table">
+        <br><h6>Четная неделя</h6><br>
+        <table class="table">
+            <thead class="rasp-head">
+                <tr>
+                    <th class="time">День / Пара</th>
+                    <th class="time">1  08:50-10:20</th>
+                    <th class="time">2  10:35-12:05</th>
+                    <th class="time">3  12:35-14:05</th>
+                    <th class="time">4  14:15-15:45</th>
+                    <th class="time">5  15:55-17:20</th>
+                    <th class="time">6  17:30-19:00</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for day, lessons in teacher_schedules.even.items %}
+                <tr>
+                    <td>{{ day }}</td>
+                    {% for lesson_list in lessons %}
+                    <td>
+                        {% if lesson_list %}
+                        {% for lesson in lesson_list %}
+                            {{ lesson.discipline.discipline }}<br>
+                            {{ lesson.classroom.classroom }} ({{ lesson.lesson_type.lesson_type }})<br>
+                            {{ lesson.group.group }}<br>
+                        {% endfor %}
+                        {% else %}
+                        Нет занятий
+                        {% endif %}
+                    </td>
+                    {% endfor %}
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+
+    <script>
+        let currentDate = new Date('2023-12-22');  // Текущая дата и время
+        currentDate.setDate(currentDate.getDate() - currentDate.getDay() + 1);  // Установим на понедельник текущей недели
+        let currentWeek = 1;  // 1 для нечетной недели, 0 для четной недели
+
+        function changeWeek(direction) {
+            currentDate.setDate(currentDate.getDate() + direction * 7);  // Переместить дату на неделю вперед или назад
+            currentWeek = (currentWeek + direction) % 2;
+            if (currentWeek < 0) currentWeek = 1;
+
+            updateSchedule();
+        }
+
+        function updateSchedule() {
+            const oddSchedule = document.getElementById('odd-schedule');
+            const evenSchedule = document.getElementById('even-schedule');
+
+            oddSchedule.classList.toggle('active', currentWeek === 1);
+            evenSchedule.classList.toggle('active', currentWeek === 0);
+
+            updateDates();
+        }
+
+        function updateDates() {
+            const scheduleTables = [
+                {element: document.getElementById('odd-schedule'), weekOffset: currentWeek === 1 ? 0 : -1},
+                {element: document.getElementById('even-schedule'), weekOffset: currentWeek === 0 ? 0 : -1}
+            ];
+
+            scheduleTables.forEach((scheduleTable) => {
+                const rows = scheduleTable.element.querySelectorAll('tbody tr');
+                const firstDayOfWeek = new Date(currentDate.getTime() + scheduleTable.weekOffset * 7 * 86400000);  // Понедельник недели
+
+                rows.forEach((row, dayIndex) => {
+                    const dayCell = row.querySelector('td:first-child');
+                    const dayDate = new Date(firstDayOfWeek.getTime() + dayIndex * 86400000); // Добавить количество дней в миллисекундах
+                    const formattedDate = dayDate.toLocaleDateString('ru-RU');
+                    dayCell.innerText = `${dayCell.innerText.split(' ')[0]} ${formattedDate}`;
+                });
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", function() {
+            updateSchedule();
+        });
+    </script>
+</div>
+{% endblock %}
